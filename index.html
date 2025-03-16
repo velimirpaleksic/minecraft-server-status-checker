@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Server Status Checker</title>
+    <link href="bootstrap.css" rel="stylesheet">
+    <script src="jquery.js"></script>
+</head>
+<body>
+    <div class="ms-3">
+        <p class="h4 mt-3 mb-3">Server</p>
+        <form name="server">
+            <div class="row g-2">
+                <div class="mb-3 col-md-6 col-sm-12">
+                    <label for="server_url" class="form-label">URL</label>
+                    <input type="text" class="form-control" id="server_url" placeholder="mc.hypixel.net" value="mc.hypixel.net">
+                </div>
+                <div class="mb-3 col-md-2 col-sm-12">
+                    <label for="server_port" class="form-label">Port</label>
+                    <input type="number" class="form-control" id="server_port" placeholder="25565" value="25565">
+                </div>
+            </div>
+            <div class="mb-3">
+                <button type="button" onclick="get_server_status();" class="btn btn-success">Check</button>
+            </div>
+        </form>
+    </div>
+    
+    <p class="h4 mt-3 mb-3 ms-3">Server Status</p>
+    <div class="ms-3">
+        <p id="server_url_title" class="fw-bold mb-1">Loading...</p>
+        <img src="pack.png" id="favicon" alt="Server image" width="64" class="mb-1">
+        <div id="status">Loading...</div>
+        <p id="latency" class="mt-2"></p>
+        <p id="version" class="mt-2"></p>
+        <p class="fw-bold mt-2">Players Online:</p>
+        <ul id="player_list"></ul>
+    </div>
+
+    <script>
+        function get_server_status() {
+            $('#status').html("Loading...");
+            $('#favicon').attr('src', "pack.png");
+            $('#latency').html("");
+            $('#version').html("");
+            $('#player_list').html("");
+
+            let server_url = document.server.server_url.value;
+            let server_port = document.server.server_port.value;
+            let server_url_full = `https://api.minetools.eu/ping/${server_url}/${server_port}`;
+
+            $.getJSON(server_url_full, function(api) {
+                if (api.error) {
+                    $('#status').html('Server closed or not found.');
+                    return;
+                }
+
+                $('#status').html(api.description.replace(/§(.+?)/gi, '') + 
+                    `<br><span class="fw-bold">Online Players:</span> ${api.players.online}/${api.players.max}`);
+                
+                if (api.favicon) {
+                    $('#favicon').attr('src', api.favicon);
+                }
+                
+                $('#latency').html(`<span class="fw-bold">Latency:</span> ${api.latency.toFixed(2)} ms`);
+                $('#version').html(`<span class="fw-bold">Version:</span> ${api.version.name} (Protocol: ${api.version.protocol})`);
+
+                if (api.players.sample && api.players.sample.length > 0) {
+                    api.players.sample.forEach(player => {
+                        $('#player_list').append(`<li>${player.name}</li>`);
+                    });
+                } else {
+                    $('#player_list').html('<li>No players online</li>');
+                }
+            });
+
+            $("#server_url_title").html(server_url);
+        }
+
+        get_server_status();
+    </script>
+</body>
+</html>
